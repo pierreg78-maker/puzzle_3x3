@@ -1,2 +1,2 @@
-# tests
-dépôt pour tester des trucs 
+# Tests
+Dépôt pour tester des trucs, principalement en html et java
