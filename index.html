@@ -7,5 +7,68 @@
     <body>
       Ceci est ma première page de tests <br>
       Penser à voir les thèmes Jekyll de Github <a href="https://github.com/pages-themes/modernist">ici</a> et <a href="https://jekyllthemes.io/free">là</a>
-    </body>
+    
+/*Puzzle 3x3 - Atelier Mémoire*/
+    <style>
+        body { display: flex; flex-direction: column; align-items: center; font-family: sans-serif; background: #f9f9f9; }
+        
+        /* La grille qui contient le modèle fantôme */
+        #puzzle-board {
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            grid-template-rows: repeat(3, 150px);
+            width: 450px;
+            height: 450px;
+            border: 3px solid #333;
+            /* Ton image de fond en modèle fantôme */
+            background-image: url(https://share.google/8EdGv2s6TBN5QFXwD); 
+            background-size: cover;
+            opacity: 1; /* On garde la grille à 100% */
+            position: relative;
+        }
+
+        /* Le modèle fantôme à 10% */
+        #puzzle-board::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: inherit;
+            background-size: cover;
+            opacity: 0.1; /* Opacité à 10% demandée */
+            pointer-events: none;
+        }
+
+        .slot { width: 150px; height: 150px; border: 1px solid rgba(0,0,0,0.1); box-sizing: border-box; }
+        
+        .piece { width: 150px; height: 150px; cursor: grab; background-size: 450px 450px; }
+    </style>
+</head>
+<body>
+
+    <h1>Puzzle du Périgord</h1>
+
+    <div id="puzzle-board">
+        <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        </div>
+
+    <script>
+        function allowDrop(ev) { ev.preventDefault(); }
+        
+        function drop(ev) {
+            ev.preventDefault();
+            var data = ev.dataTransfer.getData("text");
+            var target = ev.target;
+            
+            // Logique de "Snap" : si on lâche sur un slot, on y place la pièce
+            if (target.classList.contains('slot') && target.children.length === 0) {
+                target.appendChild(document.getElementById(data));
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+</body>
 </html>
