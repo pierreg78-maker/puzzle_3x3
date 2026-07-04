@@ -1,74 +1,107 @@
 <!DOCTYPE html>
 <html lang="fr">
-    <head>
-        <meta charset="utf-8">
-        <title>Page de tests</title>
-    </head>
-    <body>
-      Ceci est ma première page de tests. <br>
-      Penser à voir les thèmes Jekyll de Github <a href="https://github.com/pages-themes/modernist">ici</a> et <a href="https://jekyllthemes.io/free">là</a>
-    
-/*Puzzle 3x3 - Atelier Mémoire*/
-    <style>
-        body { display: flex; flex-direction: column; align-items: center; font-family: sans-serif; background: #f9f9f9; }
-        
-        /* La grille qui contient le modèle fantôme */
-        #puzzle-board {
-            display: grid;
-            grid-template-columns: repeat(3, 150px);
-            grid-template-rows: repeat(3, 150px);
-            width: 450px;
-            height: 450px;
-            border: 3px solid #333;
-            /* Ton image de fond en modèle fantôme */
-            background-image: url('https://share.google/8EdGv2s6TBN5QFXwD'); 
-            background-size: cover;
-            opacity: 1; /* On garde la grille à 100% */
-            position: relative;
-        }
-
-        /* Le modèle fantôme à 10% */
-        #puzzle-board::before {
-            content: "";
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: inherit;
-            background-size: cover;
-            opacity: 0.1; /* Opacité à 10% demandée */
-            pointer-events: none;
-        }
-
-        .slot { width: 150px; height: 150px; border: 1px solid rgba(0,0,0,0.1); box-sizing: border-box; }
-        
-        .piece { width: 150px; height: 150px; cursor: grab; background-size: 450px 450px; }
-    </style>
+<head>
+<meta charset="UTF-8">
+<title>Flashcards - Niveau Facile</title>
+<style>
+body {
+font-family: Arial;
+background:#f0f3f5;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+}
+.card {
+width:400px;
+height:250px;
+perspective:1000px;
+}
+.inner {
+position:relative;
+width:100%;
+height:100%;
+transition:transform 0.6s;
+transform-style:preserve-3d;
+cursor:pointer;
+}
+.flipped {
+transform:rotateY(180deg);
+}
+.front,.back {
+position:absolute;
+width:100%;
+height:100%;
+backface-visibility:hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:20px;
+border-radius:12px;
+box-shadow:0 10px 20px rgba(0,0,0,0.2);
+}
+.front {
+background:white;
+}
+.back {
+background:#2c3e50;
+color:white;
+transform:rotateY(180deg);
+}
+button {
+margin:10px;
+padding:10px 15px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+</style>
 </head>
 <body>
 
-    <h1>Puzzle du Périgord</h1>
+<h2>Niveau Facile</h2>
 
-    <div id="puzzle-board">
-        <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-        </div>
+<div class="card">
+<div class="inner" id="card">
+<div class="front" id="front"></div>
+<div class="back" id="back"></div>
+</div>
+</div>
 
-    <script>
-        function allowDrop(ev) { ev.preventDefault(); }
-        
-        function drop(ev) {
-            ev.preventDefault();
-            var data = ev.dataTransfer.getData("text");
-            var target = ev.target;
-            
-            // Logique de "Snap" : si on lâche sur un slot, on y place la pièce
-            if (target.classList.contains('slot') && target.children.length === 0) {
-                target.appendChild(document.getElementById(data));
-            }
-        }
-    </script>
-</body>
-</html>
+<div>
+<button onclick="prev()">⬅</button>
+<button onclick="flip()">🔄</button>
+<button onclick="next()">➡</button>
+</div>
 
+<script>
+const cards = [{'word': 'ABSOLU', 'definition': 'Qui est total, sans limite ni condition.', 'hint': 'Ex : une vérité sans exception.'}, {'word': 'ACADÉMIQUE', 'definition': "Qui concerne l'enseignement supérieur ou les études.", 'hint': 'Ex : une année universitaire.'}, {'word': 'ACCEPTER', 'definition': 'Dire oui, consentir à quelque chose.', 'hint': 'Ex : accepter une proposition.'}, {'word': 'ACCIDENT', 'definition': 'Événement imprévu causant souvent un dommage.', 'hint': 'Ex : choc sur la route.'}, {'word': 'ACCOMPAGNER', 'definition': 'Être avec quelqu’un pour l’aider ou le guider.', 'hint': 'Ex : aller avec quelqu’un.'}, {'word': 'ACCÉDER', 'definition': 'Parvenir à entrer ou obtenir un accès.', 'hint': 'Ex : entrer dans un lieu.'}, {'word': 'ADMINISTRATION', 'definition': 'Organisation qui gère un service ou un État.', 'hint': 'Ex : services publics.'}, {'word': 'AVANTAGE', 'definition': 'Point positif dans une situation.', 'hint': 'Ex : ce qui aide à réussir.'}, {'word': 'BESOIN', 'definition': 'Nécessité de quelque chose.', 'hint': 'Ex : avoir faim ou soif.'}, {'word': 'BONHEUR', 'definition': 'État de joie profonde et durable.', 'hint': 'Ex : être très heureux.'}, {'word': 'CAPABLE', 'definition': 'Qui peut faire quelque chose.', 'hint': 'Ex : réussir une tâche.'}, {'word': 'CAPACITÉ', 'definition': 'Pouvoir ou aptitude à faire quelque chose.', 'hint': 'Ex : mémoire ou talent.'}, {'word': 'CHERCHER', 'definition': 'Essayer de trouver quelque chose.', 'hint': 'Ex : trouver un objet.'}, {'word': 'CHOISIR', 'definition': 'Sélectionner entre plusieurs options.', 'hint': 'Ex : décider entre deux choses.'}, {'word': 'COMPRENDRE', 'definition': 'Saisir le sens de quelque chose.', 'hint': 'Ex : comprendre une explication.'}, {'word': 'CONSEIL', 'definition': 'Recommandation donnée pour aider.', 'hint': 'Ex : une aide pour décider.'}, {'word': 'DÉCIDER', 'definition': 'Prendre une décision.', 'hint': 'Ex : faire un choix.'}, {'word': 'DIFFICILE', 'definition': 'Qui n’est pas facile à faire.', 'hint': 'Ex : un problème complexe.'}, {'word': 'DISCUTER', 'definition': 'Parler avec échange d’idées.', 'hint': 'Ex : débattre calmement.'}, {'word': 'ÉCOUTER', 'definition': 'Prêter attention à un son ou une parole.', 'hint': 'Ex : entendre volontairement.'}, {'word': 'ESSAYER', 'definition': 'Tenter de faire quelque chose.', 'hint': 'Ex : tester une action.'}, {'word': 'EXPLIQUER', 'definition': 'Rendre quelque chose clair.', 'hint': 'Ex : donner des détails.'}, {'word': 'FACILE', 'definition': 'Qui demande peu d’effort.', 'hint': 'Ex : simple à faire.'}, {'word': 'FAMILLE', 'definition': 'Groupe de personnes liées par parenté.', 'hint': 'Ex : parents et enfants.'}, {'word': 'GARDER', 'definition': 'Conserver quelque chose.', 'hint': 'Ex : ne pas perdre.'}, {'word': 'IMPORTANT', 'definition': 'Qui a une grande valeur ou influence.', 'hint': 'Ex : essentiel.'}, {'word': 'IMAGINER', 'definition': 'Créer des images dans son esprit.', 'hint': 'Ex : inventer mentalement.'}, {'word': 'INTÉRÊT', 'definition': 'Ce qui attire l’attention.', 'hint': 'Ex : curiosité.'}, {'word': 'JOLI', 'definition': 'Beau de manière simple.', 'hint': 'Ex : agréable à voir.'}, {'word': 'JEUNE', 'definition': 'Qui a peu d’âge.', 'hint': 'Ex : enfant ou adolescent.'}, {'word': 'LANGAGE', 'definition': 'Manière de s’exprimer avec des mots.', 'hint': 'Ex : langue parlée.'}, {'word': 'LIRE', 'definition': 'Comprendre un texte écrit.', 'hint': 'Ex : livre ou article.'}, {'word': 'MANGER', 'definition': 'Prendre un repas ou de la nourriture.', 'hint': 'Ex : se nourrir.'}, {'word': 'MESSAGE', 'definition': 'Information transmise à quelqu’un.', 'hint': 'Ex : SMS ou note.'}, {'word': 'MONTRER', 'definition': 'Faire voir quelque chose.', 'hint': 'Ex : présenter un objet.'}, {'word': 'NATUREL', 'definition': 'Qui vient sans artifice.', 'hint': 'Ex : non artificiel.'}, {'word': 'NOUVEAU', 'definition': 'Qui n’existait pas avant.', 'hint': 'Ex : récent.'}, {'word': 'OUVRIR', 'definition': 'Rendre accessible en retirant une fermeture.', 'hint': 'Ex : porte ou livre.'}, {'word': 'PARLER', 'definition': 'Exprimer des idées avec des mots.', 'hint': 'Ex : conversation.'}, {'word': 'PENSER', 'definition': 'Avoir des idées dans son esprit.', 'hint': 'Ex : réfléchir.'}, {'word': 'PERMETTRE', 'definition': 'Autoriser quelque chose.', 'hint': 'Ex : donner la permission.'}, {'word': 'PRENDRE', 'definition': 'Saisir ou utiliser quelque chose.', 'hint': 'Ex : attraper.'}, {'word': 'QUESTION', 'definition': 'Phrase ou idée qui demande une réponse.', 'hint': 'Ex : interrogation.'}, {'word': 'RAPIDE', 'definition': 'Qui va vite.', 'hint': 'Ex : contraire de lent.'}, {'word': 'RAISON', 'definition': 'Explication logique.', 'hint': 'Ex : justification.'}, {'word': 'RESTER', 'definition': 'Ne pas partir.', 'hint': 'Ex : demeurer.'}, {'word': 'TRAVAILLER', 'definition': 'Faire une activité professionnelle ou scolaire.', 'hint': 'Ex : effort productif.'}, {'word': 'UTILISER', 'definition': 'Se servir de quelque chose.', 'hint': 'Ex : employer un outil.'}, {'word': 'VOIR', 'definition': 'Percevoir avec les yeux.', 'hint': 'Ex : regarder.'}];
+
+let i = 0;
+
+function show() {
+document.getElementById('front').innerText = cards[i].definition;
+document.getElementById('back').innerText = cards[i].word + "\n\n" + cards[i].hint;
+}
+
+function flip() {
+document.getElementById('card').classList.toggle('flipped');
+}
+
+function next() {
+i = (i+1) % cards.length;
+show();
+}
+
+function prev() {
+i = (i-1+cards.length) % cards.length;
+show();
+}
+
+show();
+</script>
 
 </body>
 </html>
