@@ -4,25 +4,45 @@
     <meta charset="UTF-8">
     <title>Puzzle 3x3 - Atelier Mémoire</title>
     <style>
-        body { display: flex; flex-direction: column; align-items: center; font-family: sans-serif; background: #f9f9f9; }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
         
-        /* La grille qui contient le modèle fantôme */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .game-container {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
         #puzzle-board {
-    display: grid;
-    grid-template-columns: repeat(3, 150px);
-    grid-template-rows: repeat(3, 150px);
-    width: 450px;
-    height: 450px;
-    border: 3px solid #333;
-    /* Ajout du background-color pour voir le bloc */
-    background-color: #ddd; 
-    /* Utilise un chemin absolu temporairement pour tester */
-    background-image: url('images/carte_totale.jpg'); 
-    background-size: cover;
-    position: relative;
-}
-
-        /* Le modèle fantôme à 10% */
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            grid-template-rows: repeat(3, 150px);
+            width: 450px;
+            height: 450px;
+            border: 3px solid #2c3e50;
+            background-color: #ecf0f1;
+            background-image: url('images/carte_totale.jpg');
+            background-size: cover;
+            position: relative;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
         #puzzle-board::before {
             content: "";
             position: absolute;
@@ -30,35 +50,282 @@
             height: 100%;
             background-image: inherit;
             background-size: cover;
-            opacity: 0.1; /* Opacité à 10% demandée */
+            opacity: 0.15;
             pointer-events: none;
+            border-radius: 5px;
         }
-
-        .slot { width: 150px; height: 150px; border: 1px solid rgba(0,0,0,0.1); box-sizing: border-box; }
         
-        .piece { width: 150px; height: 150px; cursor: grab; background-size: 450px 450px; }
+        .slot {
+            width: 150px;
+            height: 150px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+        
+        #pieces-container {
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            grid-template-rows: repeat(3, 150px);
+            gap: 10px;
+            width: 470px;
+        }
+        
+        .piece {
+            width: 150px;
+            height: 150px;
+            cursor: grab;
+            background-size: 450px 450px;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
+            border: 2px solid #bdc3c7;
+            background-color: #ecf0f1;
+        }
+        
+        .piece:hover { transform: scale(1.03); }
+        .piece:active { cursor: grabbing; }
+        .piece.correct { border-color: #27ae60; box-shadow: 0 0 10px rgba(39, 174, 96, 0.5); }
+        
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #2980b9, #1f618d);
+            transform: translateY(-2px);
+        }
+        
+        button:active { transform: translateY(0); }
+        
+        #win-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px 50px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+        
+        #win-message h2 { color: #27ae60; margin-bottom: 15px; }
+        
+        .timer {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 8px;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            color: #7f8c8d;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        @media (max-width: 1000px) {
+            .game-container { flex-direction: column; align-items: center; }
+            #pieces-container { margin-top: 30px; }
+        }
     </style>
 </head>
 <body>
-
-    <h1>Carte postale rétro</h1>
-
-    <div id="puzzle-board">
-        <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    <h1>🧩 Puzzle Carte Postale Rétro</h1>
+    
+    <div class="timer">⏱️ Temps: <span id="time">00:00</span></div>
+    
+    <div class="game-container">
+        <div id="puzzle-board">
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="0"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="1"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="2"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="3"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="4"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="5"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="6"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="7"></div>
+            <div class="slot" ondrop="drop(event)" ondragover="allowDrop(event)" data-index="8"></div>
         </div>
+        
+        <div id="pieces-container"></div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="shufflePieces()">🔄 Mélanger</button>
+        <button onclick="resetGame()">↻ Réinitialiser</button>
+        <button onclick="solvePuzzle()">✅ Résoudre</button>
+    </div>
+    
+    <div class="instructions">
+        <strong>Instructions:</strong> Glissez-déposez les pièces sur la grille.
+    </div>
+    
+    <div id="win-message">
+        <h2>🎉 Félicitations !</h2>
+        <p>Puzzle complété en <span id="final-time">00:00</span> !</p>
+        <button onclick="resetGame()">Rejouer</button>
+    </div>
 
     <script>
-        function allowDrop(ev) { ev.preventDefault(); }
+        let pieces = [];
+        let startTime;
+        let timerInterval;
+        let isGameActive = false;
+        
+        window.onload = function() {
+            createPieces();
+            startGame();
+        };
+        
+        function createPieces() {
+            const container = document.getElementById('pieces-container');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'piece';
+                piece.id = 'piece-' + i;
+                piece.draggable = true;
+                piece.dataset.index = i;
+                
+                const row = Math.floor(i / 3);
+                const col = i % 3;
+                piece.style.backgroundImage = "url('images/carte_totale.jpg')";
+                piece.style.backgroundPosition = `-${col * 150}px -${row * 150}px`;
+                
+                piece.ondragstart = function(ev) {
+                    ev.dataTransfer.setData("text/plain", ev.target.id);
+                    ev.target.style.opacity = '0.5';
+                };
+                
+                piece.ondragend = function(ev) {
+                    ev.target.style.opacity = '1';
+                };
+                
+                container.appendChild(piece);
+                pieces.push(piece);
+            }
+        }
+        
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
         
         function drop(ev) {
             ev.preventDefault();
-            var data = ev.dataTransfer.getData("text");
-            var target = ev.target;
+            const data = ev.dataTransfer.getData("text/plain");
+            const piece = document.getElementById(data);
+            const target = ev.target;
             
-            // Logique de "Snap" : si on lâche sur un slot, on y place la pièce
-            if (target.classList.contains('slot') && target.children.length === 0) {
-                target.appendChild(document.getElementById(data));
+            if (target.classList.contains('slot')) {
+                if (piece.parentElement.classList.contains('slot')) {
+                    piece.parentElement.innerHTML = '';
+                }
+                
+                if (target.children.length === 0) {
+                    target.appendChild(piece);
+                    checkWin();
+                }
             }
+        }
+        
+        function checkWin() {
+            const slots = document.querySelectorAll('#puzzle-board .slot');
+            let allCorrect = true;
+            
+            slots.forEach((slot, index) => {
+                const piece = slot.querySelector('.piece');
+                if (piece && parseInt(piece.dataset.index) === index) {
+                    piece.classList.add('correct');
+                } else {
+                    allCorrect = false;
+                }
+            });
+            
+            if (allCorrect && isGameActive) {
+                winGame();
+            }
+        }
+        
+        function shufflePieces() {
+            if (!isGameActive) startGame();
+            const container = document.getElementById('pieces-container');
+            const shuffledPieces = [...pieces].sort(() => Math.random() - 0.5);
+            container.innerHTML = '';
+            shuffledPieces.forEach(piece => container.appendChild(piece));
+            document.querySelectorAll('#puzzle-board .slot').forEach(slot => slot.innerHTML = '');
+        }
+        
+        function startGame() {
+            if (isGameActive) return;
+            isGameActive = true;
+            startTime = new Date();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((new Date() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                document.getElementById('time').textContent = `${minutes}:${seconds}`;
+            }, 1000);
+        }
+        
+        function resetGame() {
+            clearInterval(timerInterval);
+            isGameActive = false;
+            document.getElementById('time').textContent = '00:00';
+            document.getElementById('win-message').style.display = 'none';
+            const container = document.getElementById('pieces-container');
+            container.innerHTML = '';
+            pieces.forEach(piece => {
+                piece.classList.remove('correct');
+                container.appendChild(piece);
+            });
+            document.querySelectorAll('#puzzle-board .slot').forEach(slot => slot.innerHTML = '');
+        }
+        
+        function solvePuzzle() {
+            if (!isGameActive) startGame();
+            const slots = document.querySelectorAll('#puzzle-board .slot');
+            const container = document.getElementById('pieces-container');
+            slots.forEach((slot, index) => {
+                const piece = document.getElementById(`piece-${index}`);
+                if (piece && piece.parentElement === container) {
+                    slot.appendChild(piece);
+                    piece.classList.add('correct');
+                }
+            });
+            container.innerHTML = '';
+            winGame();
+        }
+        
+        function winGame() {
+            clearInterval(timerInterval);
+            isGameActive = false;
+            const finalTime = document.getElementById('time').textContent;
+            document.getElementById('final-time').textContent = finalTime;
+            document.getElementById('win-message').style.display = 'block';
         }
     </script>
 </body>
