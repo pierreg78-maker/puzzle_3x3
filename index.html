@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Puzzle 3x3 - Atelier Mémoire</title>
     <style>
-        body { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            font-family: sans-serif; 
-            background: #f9f9f9; 
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: sans-serif;
+            background: #f9f9f9;
             padding: 20px;
             margin: 0;
         }
-        
+
         h1 { color: #333; }
-        
+
         #puzzle-board {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -25,8 +25,8 @@
             max-width: 90vw;
             aspect-ratio: 1 / 1;
             border: 5px solid #333;
-            background-color: #ddd; 
-            background-image: url('https://picsum.photos/id/1015/600/600'); 
+            background-color: #ddd;
+            background-image: url('images/carte_totale.jpg');
             background-size: cover;
             position: relative;
             gap: 5px;
@@ -40,10 +40,11 @@
             content: "";
             position: absolute;
             inset: 0;
-            background-image: url('https://picsum.photos/id/1015/600/600');
+            background-image: url('images/carte_totale.jpg');
             background-size: cover;
             opacity: 0.13;
             pointer-events: none;
+            border-radius: 8px;
         }
 
         .slot {
@@ -53,19 +54,38 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: box-shadow 0.15s ease, border-color 0.15s ease;
         }
-        
+
+        /* Effet visuel quand une pièce s'approche de son bon emplacement */
+        .slot.slot-magnet {
+            border-color: #27ae60;
+            box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.45), inset 0 0 15px rgba(39, 174, 96, 0.3);
+        }
+
         .piece {
             width: 100%;
             height: 100%;
             cursor: grab;
             background-size: 300% 300%;
-            background-image: url('https://picsum.photos/id/1015/600/600');
+            background-image: url('images/carte_totale.jpg');
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             border-radius: 6px;
+            touch-action: none; /* empêche le scroll de la page pendant le déplacement tactile */
+            user-select: none;
+            -webkit-user-select: none;
+            transition: transform 0.1s ease;
         }
-        
-        .piece:active { transform: scale(1.1); cursor: grabbing; }
+
+        .piece.dragging {
+            cursor: grabbing;
+            transform: scale(1.08);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .piece.magnetized {
+            box-shadow: 0 0 0 3px #27ae60, 0 8px 20px rgba(0,0,0,0.4);
+        }
 
         button {
             padding: 14px 30px;
@@ -78,6 +98,21 @@
             cursor: pointer;
         }
         button:hover { background: #c0392b; }
+
+        #pieces-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            max-width: 550px;
+            margin: 20px 0;
+            min-height: 160px;
+        }
+
+        #pieces-container .piece {
+            width: 100px;
+            height: 100px;
+        }
     </style>
 </head>
 <body>
@@ -88,40 +123,168 @@
 
     <button onclick="shufflePieces()">🔀 Mélanger les pièces</button>
 
-    <div id="pieces-container" style="display:flex; flex-wrap:wrap; gap:15px; justify-content:center; max-width:550px; margin:20px 0;"></div>
+    <div id="pieces-container"></div>
 
     <div id="win-message" style="display:none; margin-top:30px; padding:20px; background:#d4edda; color:#27ae60; font-size:26px; font-weight:bold; border-radius:12px;">
     </div>
 
     <script>
-        // Fonctions globales pour que le bouton onclick marche partout
-        window.allowDrop = function(ev) { ev.preventDefault(); };
+        // ---------- Création des pièces et des slots ----------
 
-        window.drag = function(ev) {
-            ev.dataTransfer.setData("text/plain", ev.target.id);
+        window.createPieces = function(shuffle = true) {
+            const cont = document.getElementById('pieces-container');
+            cont.innerHTML = '';
+            let arr = [0,1,2,3,4,5,6,7,8];
+            if (shuffle) arr.sort(() => Math.random() - 0.5);
+
+            arr.forEach(i => {
+                const p = document.createElement('div');
+                p.className = 'piece';
+                p.id = `piece-${i}`;
+                p.dataset.index = i;
+
+                const r = Math.floor(i / 3);
+                const c = i % 3;
+                p.style.backgroundPosition = `${c * 50}% ${r * 50}%`;
+
+                attachDrag(p);
+                cont.appendChild(p);
+            });
         };
 
-        window.drop = function(ev) {
-            ev.preventDefault();
-            const id = ev.dataTransfer.getData("text/plain");
-            const piece = document.getElementById(id);
-            if (!piece) return;
+        window.shufflePieces = function() {
+            window.createPieces(true);
+            document.getElementById('win-message').style.display = 'none';
+        };
 
-            let slot = ev.target;
-            while (slot && !slot.classList.contains('slot')) slot = slot.parentElement;
-
-            if (slot && slot.classList.contains('slot')) {
-                if (slot.children.length === 0) {
-                    slot.appendChild(piece);
-                } else {
-                    const other = slot.children[0];
-                    const source = piece.parentElement;
-                    if (source) source.appendChild(other);
-                    slot.appendChild(piece);
-                }
-                window.checkWin();
+        function initPuzzle() {
+            const board = document.getElementById('puzzle-board');
+            board.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slot.id = `slot-${i}`;
+                slot.dataset.index = i;
+                board.appendChild(slot);
             }
-        };
+            window.createPieces(true);
+        }
+
+        // ---------- Déplacement via Pointer Events (souris + tactile) ----------
+
+        function attachDrag(piece) {
+            let dragging = false;
+            let startX = 0, startY = 0;
+            let origLeft = 0, origTop = 0, width = 0, height = 0;
+            let origParent = null;
+            let magnetSlot = null;
+
+            piece.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                dragging = true;
+                piece.setPointerCapture(e.pointerId);
+
+                const rect = piece.getBoundingClientRect();
+                width = rect.width;
+                height = rect.height;
+                origLeft = rect.left;
+                origTop = rect.top;
+                origParent = piece.parentElement;
+
+                document.body.appendChild(piece);
+                piece.style.position = 'fixed';
+                piece.style.left = origLeft + 'px';
+                piece.style.top = origTop + 'px';
+                piece.style.width = width + 'px';
+                piece.style.height = height + 'px';
+                piece.style.zIndex = 1000;
+                piece.classList.add('dragging');
+
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+
+            piece.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                let newLeft = origLeft + dx;
+                let newTop = origTop + dy;
+
+                // La pièce ne s'aimante que vers SON propre bon emplacement
+                const ownSlot = document.getElementById(`slot-${piece.dataset.index}`);
+                const slotRect = ownSlot.getBoundingClientRect();
+                const slotCenterX = slotRect.left + slotRect.width / 2;
+                const slotCenterY = slotRect.top + slotRect.height / 2;
+                const pieceCenterX = newLeft + width / 2;
+                const pieceCenterY = newTop + height / 2;
+                const dist = Math.hypot(pieceCenterX - slotCenterX, pieceCenterY - slotCenterY);
+
+                const threshold = Math.max(width, slotRect.width) * 0.55;
+
+                if (dist < threshold) {
+                    // Aimantation : la pièce se cale précisément sur son emplacement
+                    newLeft = slotCenterX - width / 2;
+                    newTop = slotCenterY - height / 2;
+                    ownSlot.classList.add('slot-magnet');
+                    piece.classList.add('magnetized');
+                    magnetSlot = ownSlot;
+                } else {
+                    ownSlot.classList.remove('slot-magnet');
+                    piece.classList.remove('magnetized');
+                    magnetSlot = null;
+                }
+
+                piece.style.left = newLeft + 'px';
+                piece.style.top = newTop + 'px';
+            });
+
+            const endDrag = (e) => {
+                if (!dragging) return;
+                dragging = false;
+
+                piece.classList.remove('dragging', 'magnetized');
+                piece.style.position = '';
+                piece.style.left = '';
+                piece.style.top = '';
+                piece.style.width = '';
+                piece.style.height = '';
+                piece.style.zIndex = '';
+
+                document.querySelectorAll('.slot-magnet').forEach(s => s.classList.remove('slot-magnet'));
+
+                let targetSlot = magnetSlot;
+
+                if (!targetSlot) {
+                    // Pas assez proche du bon emplacement : on regarde où le doigt/curseur a été relâché
+                    const el = document.elementFromPoint(e.clientX, e.clientY);
+                    targetSlot = el ? el.closest('.slot') : null;
+                }
+
+                if (targetSlot) {
+                    placeInSlot(piece, targetSlot, origParent);
+                } else {
+                    origParent.appendChild(piece);
+                }
+
+                magnetSlot = null;
+                window.checkWin();
+            };
+
+            piece.addEventListener('pointerup', endDrag);
+            piece.addEventListener('pointercancel', endDrag);
+        }
+
+        function placeInSlot(piece, slot, origParent) {
+            if (slot.children.length === 0) {
+                slot.appendChild(piece);
+            } else {
+                const other = slot.children[0];
+                origParent.appendChild(other);
+                slot.appendChild(piece);
+            }
+        }
 
         window.checkWin = function() {
             const slots = document.querySelectorAll('.slot');
@@ -134,45 +297,6 @@
                 document.getElementById('win-message').style.display = 'block';
             }
         };
-
-        window.createPieces = function(shuffle = true) {
-            const cont = document.getElementById('pieces-container');
-            cont.innerHTML = '';
-            let arr = [0,1,2,3,4,5,6,7,8];
-            if (shuffle) arr.sort(() => Math.random() - 0.5);
-
-            arr.forEach(i => {
-                const p = document.createElement('div');
-                p.className = 'piece';
-                p.id = `piece-${i}`;
-                p.draggable = true;
-                p.ondragstart = window.drag;
-
-                const r = Math.floor(i / 3);
-                const c = i % 3;
-                p.style.backgroundPosition = `${c*50}% ${r*50}%`;
-                cont.appendChild(p);
-            });
-        };
-
-        window.shufflePieces = function() {
-            window.createPieces(true);
-            document.getElementById('win-message').style.display = 'none';
-        };
-
-        // Initialisation
-        function initPuzzle() {
-            const board = document.getElementById('puzzle-board');
-            board.innerHTML = '';
-            for (let i = 0; i < 9; i++) {
-                const slot = document.createElement('div');
-                slot.className = 'slot';
-                slot.ondragover = window.allowDrop;
-                slot.ondrop = window.drop;
-                board.appendChild(slot);
-            }
-            window.createPieces(true);
-        }
 
         window.onload = initPuzzle;
     </script>
