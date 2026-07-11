@@ -135,19 +135,20 @@
     Retour à l'accueil
       </a>
     </div>
-    
+    <button onclick="shufflePieces()"> Faire glisser les pièces</button>
+     <div id="win-message" style="display:none; margin-top:30px; padding:20px; background:#d4edda; color:#27ae60; font-size:26px; font-weight:bold; border-radius:12px;">
+    </div>
+
+       <div id="puzzle-board"></div>
 <!-- Bouton any -->
         <a href="https://pierreg78-maker.github.io/puzzle2/" class="any-btn">
             Voir d'autes puzzles >
         </a>
-       <div id="puzzle-board"></div>
-
-    <button onclick="shufflePieces()"> Faire glisser les pièces</button>
+    
 
     <div id="pieces-container"></div>
 
-    <div id="win-message" style="display:none; margin-top:30px; padding:20px; background:#d4edda; color:#27ae60; font-size:26px; font-weight:bold; border-radius:12px;">
-    </div>
+   
 
     <script>
         // ---------- Création des pièces et des slots ----------
